@@ -1,0 +1,62 @@
+import graphics
+import io
+import os
+import console
+
+var int iterations = 10
+var originalFile = "original.png"
+if(os.args().length > 1){
+    originalFile = os.args()[1]
+}
+if(!io.exists_file(originalFile)){
+    print(console.red("No file called '" + originalFile + "' found!"))
+    exit(2)
+}
+// TODO: Support such things: var approachFile = "approach.png"
+
+var Canvas original = Canvas:fromFile(originalFile)
+var Canvas approach = new Canvas(original.width, original.height)
+
+if(!io.exists_directory("out")){
+    io.create_directory("out")
+}
+
+repeat(approach.height, y = 0){
+    repeat(approach.width, x = 0){
+        approach.setPixel(x, y, Color:random())
+    }
+}
+approach.save("out/0.png")
+
+repeat(iterations, i = 1){
+    repeat(approach.height, y = 0){
+        repeat(approach.width, x = 0){
+            var oc = original.getPixel(x, y)
+            var ac = approach.getPixel(x, y)
+
+            var diffA = oc.a - ac.a
+            var diffR = oc.r - ac.r
+            var diffG = oc.g - ac.g
+            var diffB = oc.b - ac.b
+
+            approach.setPixel(x, y, new Color(
+                byte(ac.a + diffA / float(iterations)),
+                byte(ac.r + diffR / float(iterations)),
+                byte(ac.g + diffG / float(iterations)),
+                byte(ac.b + diffB / float(iterations))
+            )) // TODO: Maybe the last iteration should be the original?
+        }
+    }
+    approach.save("out/" + i + ".png")
+}
+
+var Canvas total = new Canvas(approach.width * (iterations + 1), approach.height)
+repeat(iterations + 1, i = 0){
+    var img = Canvas:fromFile("out/" + i + ".png")
+    repeat(approach.height, y = 0){
+        repeat(approach.width, x = 0){
+            total.setPixel(x + i * approach.width, y, img.getPixel(x, y))
+        }
+    }
+}
+total.save("out/total.png")
